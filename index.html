@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Santa's Video Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Baloo 2', cursive;
+    background: repeating-linear-gradient(45deg, #d32f2f 0 40px, #b71c1c 40px 80px);
+    color:#fff; min-height:100vh; overflow-x:hidden; padding-bottom:60px;
+  }
+  .snow { position:fixed; top:-10px; z-index:0; color:#fff; opacity:.85; animation:fall linear infinite; pointer-events:none; }
+  @keyframes fall { to { transform:translateY(105vh) rotate(360deg); } }
+  .wrap { position:relative; z-index:1; max-width:520px; margin:0 auto; padding:18px 14px; text-align:center; }
+  h1 { font-size:2.6rem; line-height:1.05; text-shadow:3px 3px 0 #7f0000; margin-top:14px; }
+  h1 span { display:inline-block; animation:bounce 1.6s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-8px) rotate(2deg);} }
+  .sub { font-family:'Fredoka'; font-weight:700; font-size:1.05rem; background:#fff8e1; color:#b71c1c; display:inline-block; padding:8px 18px; border-radius:999px; margin:14px 0 4px; box-shadow:0 4px 0 #c9a227; }
+  .steps { display:flex; gap:6px; justify-content:center; margin:12px 0 4px; flex-wrap:wrap; }
+  .steps div { background:#1b5e20; border:3px solid #fff; border-radius:14px; padding:6px 10px; font-size:.8rem; font-weight:800; }
+  h2 { margin:22px 0 10px; font-size:1.5rem; text-shadow:2px 2px 0 #7f0000; }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .card { background:#fff; border-radius:22px; padding:8px 8px 12px; cursor:pointer; border:5px solid transparent; box-shadow:0 6px 0 rgba(0,0,0,.25); transition:transform .15s; }
+  .card:active { transform:scale(.96); }
+  .card img { width:100%; border-radius:16px; display:block; }
+  .card .name { color:#333; font-size:1.15rem; font-weight:800; margin-top:6px; }
+  .card .tag { color:#777; font-family:'Fredoka'; font-size:.75rem; }
+  .card.sel { border-color:#ffd600; animation:wob .4s; }
+  @keyframes wob { 0%,100%{transform:rotate(0);} 25%{transform:rotate(3deg);} 75%{transform:rotate(-3deg);} }
+  .talkbtn { margin-top:14px; width:100%; font-family:'Baloo 2'; font-weight:800; font-size:1.25rem; color:#4a148c; background:#ffd600; border:none; border-radius:999px; padding:14px; box-shadow:0 6px 0 #c9a227; cursor:pointer; }
+  .talkbtn:active { transform:translateY(4px); box-shadow:0 2px 0 #c9a227; }
+  form { background:#283593; border:4px solid #fff; border-radius:24px; padding:18px 16px; margin-top:22px; text-align:left; }
+  label { display:block; font-family:'Fredoka'; font-weight:700; font-size:.95rem; margin:12px 0 4px; }
+  input, textarea { width:100%; border:none; border-radius:14px; padding:12px; font-family:'Baloo 2'; font-size:1rem; color:#333; }
+  textarea { min-height:90px; resize:vertical; }
+  .price { display:inline-block; background:#ffd600; color:#b71c1c; font-weight:800; font-size:1.6rem; border-radius:999px; padding:6px 26px; margin-top:18px; box-shadow:0 5px 0 #c9a227; transform:rotate(-3deg); }
+  .order { margin-top:12px; width:100%; font-family:'Baloo 2'; font-weight:800; font-size:1.5rem; color:#fff; background:#43a047; border:4px solid #fff; border-radius:999px; padding:16px; box-shadow:0 6px 0 #1b5e20; cursor:pointer; }
+  .order:active { transform:translateY(4px); box-shadow:0 2px 0 #1b5e20; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:9; }
+  .modal .box { background:#fff8e1; color:#b71c1c; border-radius:26px; padding:24px; max-width:320px; text-align:center; font-size:1.1rem; font-weight:600; }
+  .modal button { margin-top:14px; background:#d32f2f; color:#fff; border:none; border-radius:999px; padding:10px 26px; font-family:'Baloo 2'; font-weight:800; font-size:1.05rem; cursor:pointer; }
+  .fine { font-family:'Fredoka'; font-size:.75rem; opacity:.9; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title"></h1>
+  <div class="sub">Pick a friend! They will say YOUR message in a video!</div>
+  <div class="steps"><div>1. Pick</div><div>2. Type</div><div>3. Watch!</div></div>
+
+  <h2>Choose Your Character</h2>
+  <div class="grid" id="grid"></div>
+  <button class="talkbtn" id="talk">Tap to hear them talk!</button>
+
+  <h2>Tell Them What To Say</h2>
+  <form id="f" onsubmit="return false;">
+    <label>Who is the video for?</label>
+    <input id="kid" placeholder="First name" maxlength="30">
+    <label>How old are they?</label>
+    <input id="age" type="number" min="1" max="120" placeholder="Age">
+    <label>What should they say?</label>
+    <textarea id="msg" maxlength="400" placeholder="Merry Christmas Ella! Santa is so proud of you..."></textarea>
+    <label>Who is it from?</label>
+    <input id="from" placeholder="Mom and Dad" maxlength="40">
+    <label>Email to send the video to</label>
+    <input id="email" type="email" placeholder="you@email.com">
+    <div class="price">$2.99</div><br>
+    <button class="order" id="order">Make My Video!</button>
+  </form>
+
+  <div class="fine">Videos are made just for you and sent by email. No account needed.</div>
+</div>
+<div class="modal" id="m"><div class="box" id="mbox"></div></div>
+<script>
+const CHARS = [
+  {id:"santa", name:"Santa", tag:"The big guy himself", img:"images/santa.png", line:"Ho ho ho! Hello hello! Santa here, and I have something very special to tell you!", pitch:0.5, rate:0.85},
+  {id:"grumbles", name:"Mr. Grumbles", tag:"Grumpy but sweet", img:"images/grumbles.png", line:"Hmph! Fine, FINE. Merry Christmas, little one. There, I said something nice. Happy now?", pitch:0.8, rate:0.9},
+  {id:"fuzzball", name:"Fuzzball", tag:"Squishy and loud", img:"images/fuzzball.png", line:"Hi hi hi! I am Fuzzball! I am SO excited, I could bounce all day!", pitch:1.4, rate:1.1},
+  {id:"biscuit", name:"Biscuit", tag:"Goodest puppy", img:"images/biscuit.png", line:"Woof woof! Merry Christmas! Did somebody say treats? I love treats!", pitch:1.6, rate:1.15},
+  {id:"zoomie", name:"Captain Zoomie", tag:"Kid superhero", img:"images/zoomie.png", line:"Zoomie powers, ACTIVATE! Have a super duper Christmas, hero!", pitch:1.2, rate:1.1},
+  {id:"beep", name:"Beep", tag:"Robot bestie", img:"images/beep.png", line:"Beep boop! Greetings, human friend! Loading merry Christmas wishes. Beep boop!", pitch:0.9, rate:1.0}
+];
+let sel = null;
+const t = document.getElementById('title');
+"SANTA'S VIDEO WORKSHOP".split('').forEach((c,i)=>{ const s=document.createElement('span'); s.textContent=c===' '?'\u00A0':c; s.style.animationDelay=(i*0.07)+'s'; s.style.color=['#ffd600','#ffeb3b','#fff','#ffeb3b','#ffd600'][i%5]; t.appendChild(s); });
+const grid = document.getElementById('grid');
+CHARS.forEach(c=>{ const d=document.createElement('div'); d.className='card'; d.id='c-'+c.id;
+  d.innerHTML='<img src="'+c.img+'" alt="'+c.name+'"><div class="name">'+c.name+'</div><div class="tag">'+c.tag+'</div>';
+  d.onclick=()=>{ document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); sel=c; };
+  grid.appendChild(d); });
+function speak(){ if(!sel){ showModal("Pick a character first, then tap again!"); return; }
+  if(!('speechSynthesis' in window)){ showModal("This browser is shy and cannot talk. Try Safari or Chrome!"); return; }
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(sel.line); u.pitch=sel.pitch; u.rate=sel.rate; u.volume=1; speechSynthesis.speak(u); }
+document.getElementById('talk').onclick=speak;
+function showModal(html){ document.getElementById('mbox').innerHTML=html; document.getElementById('m').style.display='flex'; }
+document.getElementById('m').onclick=()=>document.getElementById('m').style.display='none';
+document.getElementById('order').onclick=()=>{
+  const kid=document.getElementById('kid').value.trim(), msg=document.getElementById('msg').value.trim(), em=document.getElementById('email').value.trim();
+  if(!sel){ showModal("Oops! Pick a character first!"); return; }
+  if(!kid||!msg){ showModal("Oops! We need the name and the message!"); return; }
+  if(!em||!em.includes('@')){ showModal("Oops! We need an email to send the video to!"); return; }
+  showModal('<b>Ho ho ho, '+kid+'!</b><br>'+sel.name+' is ready to record your message!<br><br>(Payments switch on soon. Nothing was saved or sent.)');
+};
+for(let i=0;i<26;i++){ const s=document.createElement('div'); s.className='snow'; s.textContent=['❄','❅','❆','•'][i%4]; s.style.left=(Math.random()*100)+'vw'; s.style.fontSize=(8+Math.random()*16)+'px'; s.style.animationDuration=(5+Math.random()*7)+'s'; s.style.animationDelay=(-Math.random()*10)+'s'; document.body.appendChild(s); }
+</script>
+</body>
+</html>
