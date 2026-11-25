@@ -45,6 +45,20 @@
   .modal .box { background:#fff8e1; color:#b71c1c; border-radius:26px; padding:24px; max-width:320px; text-align:center; font-size:1.1rem; font-weight:600; }
   .modal button { margin-top:14px; background:#d32f2f; color:#fff; border:none; border-radius:999px; padding:10px 26px; font-family:'Baloo 2'; font-weight:800; font-size:1.05rem; cursor:pointer; }
   .fine { font-family:'Fredoka'; font-size:.75rem; opacity:.9; margin-top:16px; }
+  .stage{position:fixed;inset:0;background:linear-gradient(180deg,#0d1440,#1a237e 55%,#283593);display:none;z-index:8;overflow:hidden;}
+  .stage.on{display:block;}
+  .stagewrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;}
+  .bob{animation:bobmove 2.4s ease-in-out infinite;}
+  @keyframes bobmove{0%,100%{transform:translateY(0) rotate(-2.5deg);}50%{transform:translateY(-14px) rotate(2.5deg);}}
+  .face{width:min(58vw,300px);border-radius:26px;box-shadow:0 12px 0 rgba(0,0,0,.35);display:block;}
+  .face.talking{animation:talkpulse .3s ease-in-out infinite alternate;}
+  @keyframes talkpulse{from{transform:scale(1);}to{transform:scale(1.045);}}
+  .stagename{font-weight:800;font-size:1.4rem;margin-top:12px;text-shadow:2px 2px 0 rgba(0,0,0,.4);}
+  .bubble{background:#fff8e1;color:#b71c1c;font-family:'Baloo 2';font-weight:700;font-size:1.15rem;min-height:72px;max-width:min(88vw,430px);border-radius:18px;padding:12px 16px;margin-top:12px;box-shadow:0 6px 0 rgba(0,0,0,.3);}
+  .stagefrom{font-family:'Fredoka';font-weight:700;margin-top:10px;font-size:1rem;color:#ffeb3b;}
+  .stagefine{font-family:'Fredoka';font-size:.72rem;opacity:.85;margin-top:8px;}
+  .stageclose{margin-top:14px;background:#ffd600;color:#4a148c;border:none;border-radius:999px;padding:10px 30px;font-family:'Baloo 2';font-weight:800;font-size:1.05rem;box-shadow:0 5px 0 #c9a227;cursor:pointer;}
+  .stagesnow{position:absolute;top:-12px;color:#fff;opacity:.8;animation:fall linear infinite;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -75,6 +89,16 @@
   </form>
 
   <div class="fine">Videos are made just for you and sent by email. No account needed.</div>
+</div>
+<div class="stage" id="stage">
+  <div class="stagewrap">
+    <div class="bob"><img id="stageface" class="face" alt=""></div>
+    <div class="stagename" id="stagename"></div>
+    <div class="bubble" id="stagebubble"></div>
+    <div class="stagefrom" id="stagefrom"></div>
+    <div class="stagefine" id="stagefine"></div>
+    <button class="stageclose" id="stageclose">Close</button>
+  </div>
 </div>
 <div class="modal" id="m"><div class="box" id="mbox"></div></div>
 <script>
@@ -109,12 +133,31 @@ document.getElementById('talk').onclick=speak;
 function showModal(html){ document.getElementById('mbox').innerHTML=html; document.getElementById('m').style.display='flex'; }
 document.getElementById('m').onclick=()=>document.getElementById('m').style.display='none';
 document.getElementById('order').onclick=()=>{
-  const kid=document.getElementById('kid').value.trim(), msg=document.getElementById('msg').value.trim(), em=document.getElementById('email').value.trim();
+  const kid=document.getElementById('kid').value.trim(), msg=document.getElementById('msg').value.trim(), from=document.getElementById('from').value.trim(), em=document.getElementById('email').value.trim();
   if(!sel){ showModal("Oops! Pick a character first!"); return; }
   if(!kid||!msg){ showModal("Oops! We need the name and the message!"); return; }
   if(!em||!em.includes('@')){ showModal("Oops! We need an email to send the video to!"); return; }
-  showModal('<b>Ho ho ho, '+kid+'!</b><br>'+sel.name+' is ready to record your message!<br><br>(Payments switch on soon. Nothing was saved or sent.)');
+  playStage(kid,msg,from);
 };
+let _tw=null;
+function playStage(kid,msg,from){
+  const st=document.getElementById('stage'), face=document.getElementById('stageface'), bub=document.getElementById('stagebubble');
+  face.src=sel.img; face.alt=sel.name; face.classList.add('talking');
+  document.getElementById('stagename').textContent=sel.name+" has a message for "+kid+"!";
+  document.getElementById('stagefrom').textContent="with love, "+(from||"someone who loves you");
+  document.getElementById('stagefine').textContent="test watch - payments switch on soon, nothing was saved or sent";
+  st.classList.add('on');
+  for(let i=0;i<14;i++){ const s2=document.createElement('div'); s2.className='stagesnow'; s2.textContent=['\u2744','\u2745','\u2746','\u2022'][i%4]; s2.style.left=(Math.random()*100)+'vw'; s2.style.fontSize=(8+Math.random()*16)+'px'; s2.style.animationDuration=(5+Math.random()*7)+'s'; s2.style.animationDelay=(-Math.random()*10)+'s'; st.appendChild(s2); }
+  bub.textContent=''; let i=0;
+  if(_tw){clearInterval(_tw);}
+  _tw=setInterval(()=>{ if(i<msg.length){ bub.textContent+=msg[i++]; } },55);
+  try{ if(window._playing){ window._playing.pause(); } }catch(e){}
+  var a=new Audio('audio/'+sel.id+'.mp3'); window._playing=a;
+  a.onended=function(){ face.classList.remove('talking'); clearInterval(_tw); bub.textContent="Merry Christmas, "+kid+"!"; document.getElementById('talk').textContent='Tap to hear them talk!'; };
+  a.onerror=function(){ face.classList.remove('talking'); clearInterval(_tw); };
+  a.play();
+}
+document.getElementById('stageclose').onclick=()=>{ document.getElementById('stage').classList.remove('on'); try{ if(window._playing){ window._playing.pause(); } }catch(e){} };
 for(let i=0;i<26;i++){ const s=document.createElement('div'); s.className='snow'; s.textContent=['❄','❅','❆','•'][i%4]; s.style.left=(Math.random()*100)+'vw'; s.style.fontSize=(8+Math.random()*16)+'px'; s.style.animationDuration=(5+Math.random()*7)+'s'; s.style.animationDelay=(-Math.random()*10)+'s'; document.body.appendChild(s); }
 </script>
 </body>
