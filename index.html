@@ -56,6 +56,7 @@
   <h2>Choose Your Character</h2>
   <div class="grid" id="grid"></div>
   <button class="talkbtn" id="talk">Tap to hear them talk!</button>
+  <div class="fine">no sound? the phone mute switch silences voices, flip it off and tap again</div>
 
   <h2>Tell Them What To Say</h2>
   <form id="f" onsubmit="return false;">
@@ -91,11 +92,14 @@ const t = document.getElementById('title');
 const grid = document.getElementById('grid');
 CHARS.forEach(c=>{ const d=document.createElement('div'); d.className='card'; d.id='c-'+c.id;
   d.innerHTML='<img src="'+c.img+'" alt="'+c.name+'"><div class="name">'+c.name+'</div><div class="tag">'+c.tag+'</div>';
-  d.onclick=()=>{ document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); sel=c; };
+  d.onclick=()=>{ document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); sel=c; speak(true); };
   grid.appendChild(d); });
-function speak(){ if(!sel){ showModal("Pick a character first, then tap again!"); return; }
+function speakChar(){ if(!sel){ return; } _say(); }
+function speak(){ if(!sel){ showModal("Pick a character first, then tap again!"); return; } _say(); }
+function _say(){
   if(!('speechSynthesis' in window)){ showModal("This browser is shy and cannot talk. Try Safari or Chrome!"); return; }
-  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(sel.line); u.pitch=sel.pitch; u.rate=sel.rate; u.volume=1; speechSynthesis.speak(u); }
+  try{ speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); }catch(e){}
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(sel.line); u.pitch=sel.pitch; u.rate=sel.rate; u.volume=1; u.onstart=function(){ document.getElementById('talk').textContent='Talking! Tap again to hear it again'; }; u.onend=function(){ document.getElementById('talk').textContent='Tap to hear them talk!'; }; speechSynthesis.speak(u); }
 document.getElementById('talk').onclick=speak;
 function showModal(html){ document.getElementById('mbox').innerHTML=html; document.getElementById('m').style.display='flex'; }
 document.getElementById('m').onclick=()=>document.getElementById('m').style.display='none';
